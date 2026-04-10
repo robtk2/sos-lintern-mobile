@@ -1,16 +1,16 @@
 {
   "expo": {
-    "name": "02-sos-lintern",
-    "slug": "02-sos-lintern",
+    "name": "SOS Lintern",
+    "slug": "sos-lintern",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "newArchEnabled": true,
+    "newArchEnabled": false,
     "splash": {
-      "image": "./assets/splash-icon.png",
+      "image": "./assets/icon.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#000000"
     },
     "ios": {
       "supportsTablet": true
@@ -18,13 +18,29 @@
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#000000"
       },
       "edgeToEdgeEnabled": true,
-      "predictiveBackGestureEnabled": false
+      "predictiveBackGestureEnabled": false,
+      "package": "com.robk2.x02soslintern"
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "plugins": [
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Allow SOS Lintern to use the camera flashlight for emergency signals."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationAlwaysPermission": "Allow SOS Lintern to use your location for emergency rescue coordinates.",
+          "locationWhenInUsePermission": "Allow SOS Lintern to use your location for emergency rescue coordinates."
+        }
+      ]
+    ]
   }
 }
