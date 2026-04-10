@@ -18,8 +18,23 @@ export const useServiceLifecycle = () => {
     LocationService.updateCurrentLocation();
     SoundService.preload(); // Pre-load audio asset for instant response
 
+    // Refresh GPS coordinates every 30 seconds.
+    // Critical for prolonged SOS: rescuers need the most recent position.
+    const locationInterval = setInterval(() => {
+      LocationService.updateCurrentLocation();
+    }, 30_000);
+
+    // Refresh battery level every 60 seconds regardless of SOS state.
+    // The OS event (addBatteryLevelListener) only fires on ~1% drops,
+    // so we poll to keep the BatteryStatus UI always accurate.
+    const batteryInterval = setInterval(async () => {
+      await BatteryService.refreshLevel();
+    }, 60_000);
+
     return () => {
       // Clean up background resources
+      clearInterval(locationInterval);
+      clearInterval(batteryInterval);
       BatteryService.stopMonitoring();
       SoundService.unload(); // Free up audio resources on unmount
     };

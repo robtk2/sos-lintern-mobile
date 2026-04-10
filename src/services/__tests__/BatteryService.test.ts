@@ -130,4 +130,28 @@ describe('BatteryService', () => {
       expect(BatteryService.subscription).toBeNull();
     });
   });
+
+  describe('refreshLevel', () => {
+    it('should fetch battery level and update the store', async () => {
+      (Battery.getBatteryLevelAsync as jest.Mock).mockResolvedValue(0.72);
+      
+      await BatteryService.refreshLevel();
+      
+      expect(Battery.getBatteryLevelAsync).toHaveBeenCalled();
+      expect(useSOSStore.getState().batteryLevel).toBe(0.72);
+    });
+
+    it('should handle errors gracefully without crashing', async () => {
+      const consoleSpy = jest.spyOn(console, 'error').mockImplementation();
+      (Battery.getBatteryLevelAsync as jest.Mock).mockRejectedValueOnce(new Error('Sensor error'));
+      
+      await BatteryService.refreshLevel();
+      
+      expect(consoleSpy).toHaveBeenCalledWith(
+        expect.stringContaining('Failed to refresh battery level'),
+        expect.anything()
+      );
+      consoleSpy.mockRestore();
+    });
+  });
 });
