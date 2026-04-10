@@ -2,7 +2,6 @@ import { renderHook, act } from '@testing-library/react-native';
 import { useHomeLogic } from '../useHomeLogic';
 import { useSOSStore } from '@store/useSOSStore';
 import { useSOSEngine } from '@hooks/useSOSEngine';
-import { usePermissions } from '../usePermissions';
 
 // Mock dependecies
 jest.mock('@store/useSOSStore', () => ({
@@ -11,10 +10,6 @@ jest.mock('@store/useSOSStore', () => ({
 
 jest.mock('@hooks/useSOSEngine', () => ({
   useSOSEngine: jest.fn(),
-}));
-
-jest.mock('../usePermissions', () => ({
-  usePermissions: jest.fn(),
 }));
 
 jest.mock('../useAudioSync', () => ({
@@ -29,7 +24,6 @@ describe('useHomeLogic', () => {
   const mockSetSosActive = jest.fn();
   const mockSetTimerDuration = jest.fn();
   const mockSetBatteryWarningActive = jest.fn();
-  const mockRequestPermissions = jest.fn();
 
   beforeEach(() => {
     jest.clearAllMocks();
@@ -48,36 +42,15 @@ describe('useHomeLogic', () => {
     (useSOSEngine as unknown as jest.Mock).mockReturnValue({
       torchState: false,
     });
-
-    (usePermissions as unknown as jest.Mock).mockReturnValue({
-      hasPermission: true,
-      requestPermissions: mockRequestPermissions,
-    });
   });
 
-  it('should toggle SOS when permissions are granted', async () => {
+  it('should toggle SOS state', () => {
     const { result } = renderHook(() => useHomeLogic());
     
-    await act(async () => {
-      await result.current.handleSOSToggle();
+    act(() => {
+      result.current.toggleSOS();
     });
 
-    expect(mockSetSosActive).toHaveBeenCalledWith(true);
-  });
-
-  it('should request permissions if not granted before toggle', async () => {
-    (usePermissions as unknown as jest.Mock).mockReturnValue({
-      hasPermission: false,
-      requestPermissions: mockRequestPermissions.mockResolvedValue(true),
-    });
-
-    const { result } = renderHook(() => useHomeLogic());
-    
-    await act(async () => {
-      await result.current.handleSOSToggle();
-    });
-
-    expect(mockRequestPermissions).toHaveBeenCalled();
     expect(mockSetSosActive).toHaveBeenCalledWith(true);
   });
 
@@ -90,22 +63,6 @@ describe('useHomeLogic', () => {
 
     // 1h (3600) + 30m (1800) = 5400s
     expect(mockSetTimerDuration).toHaveBeenCalledWith(5400);
-  });
-
-  it('should NOT toggle SOS if permissions are denied after request', async () => {
-    (usePermissions as unknown as jest.Mock).mockReturnValue({
-      hasPermission: false,
-      requestPermissions: mockRequestPermissions.mockResolvedValue(false),
-    });
-
-    const { result } = renderHook(() => useHomeLogic());
-    
-    await act(async () => {
-      await result.current.handleSOSToggle();
-    });
-
-    expect(mockRequestPermissions).toHaveBeenCalled();
-    expect(mockSetSosActive).not.toHaveBeenCalled();
   });
 
   it('should trigger battery warning if timer exceeds battery estimate', () => {

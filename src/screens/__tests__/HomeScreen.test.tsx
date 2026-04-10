@@ -2,10 +2,15 @@ import React from 'react';
 import { render } from '@testing-library/react-native';
 import { HomeScreen } from '../HomeScreen';
 import { useHomeLogic } from '@hooks/useHomeLogic';
+import { usePermissions } from '@hooks/usePermissions';
 
 // Mock dependencies
 jest.mock('@hooks/useHomeLogic', () => ({
   useHomeLogic: jest.fn(),
+}));
+
+jest.mock('@hooks/usePermissions', () => ({
+  usePermissions: jest.fn(),
 }));
 
 // Mock all sub-components to focus on HomeScreen logic
@@ -17,6 +22,7 @@ jest.mock('@components/features/LocationDisplay', () => ({ LocationDisplay: () =
 jest.mock('@components/features/AudioToggle', () => ({ AudioToggle: () => null }));
 jest.mock('@components/features/SOSCountdown', () => ({ SOSCountdown: () => null }));
 jest.mock('@components/features/PermissionError', () => ({ PermissionError: () => null }));
+jest.mock('@components/features/BatteryWarning', () => ({ BatteryWarning: () => null }));
 
 // Mock Expo Camera
 jest.mock('expo-camera', () => ({
@@ -27,30 +33,32 @@ describe('HomeScreen', () => {
   const mockLogic = {
     sosActive: false,
     torchState: false,
-    hasPermission: true,
-    handleSOSToggle: jest.fn(),
+    toggleSOS: jest.fn(),
     handleTimeChange: jest.fn(),
+  };
+
+  const mockPermissions = {
+    permissions: { camera: true, location: true },
+    requestPermissions: jest.fn(),
   };
 
   beforeEach(() => {
     jest.clearAllMocks();
     (useHomeLogic as jest.Mock).mockReturnValue(mockLogic);
+    (usePermissions as jest.Mock).mockReturnValue(mockPermissions);
   });
 
-  it('renders the PermissionError screen when hasPermission is false', () => {
-    (useHomeLogic as jest.Mock).mockReturnValue({
-      ...mockLogic,
-      hasPermission: false,
+  it('renders the PermissionError screen when camera permission is false', () => {
+    (usePermissions as jest.Mock).mockReturnValue({
+      ...mockPermissions,
+      permissions: { camera: false, location: true },
     });
 
-    const { getByTestId, queryByTestId } = render(<HomeScreen />);
-    // Checking that PermissionError component is what's being rendered
-    // Note: since PermissionError is mocked to return null, we just check call
-    // but in a real test we'd verify component presence.
-    // For this mock, we can just verify the logic branch.
+    const { toJSON } = render(<HomeScreen />);
+    expect(toJSON()).toBeNull(); // PermissionError is mocked to null
   });
 
-  it('renders the main screen when hasPermission is true', () => {
+  it('renders the main screen when camera permission is true', () => {
     const { toJSON } = render(<HomeScreen />);
     expect(toJSON()).not.toBeNull();
   });

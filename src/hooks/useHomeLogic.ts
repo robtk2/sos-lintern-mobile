@@ -22,7 +22,6 @@ export const useHomeLogic = () => {
   } = useSOSStore();
   
   const { torchState } = useSOSEngine();
-  const { hasPermission, requestPermissions } = usePermissions();
 
   // Initialize background services (Battery, Location, KeepAwake)
   useServiceLifecycle();
@@ -57,13 +56,9 @@ export const useHomeLogic = () => {
   /**
    * Toggle the SOS signaling state.
    */
-  const handleSOSToggle = useCallback(async () => {
-    if (!hasPermission) {
-      const granted = await requestPermissions();
-      if (!granted) return;
-    }
+  const toggleSOS = useCallback(() => {
     setSosActive(!sosActive);
-  }, [sosActive, hasPermission, requestPermissions, setSosActive]);
+  }, [sosActive, setSosActive]);
 
   /**
    * Handle changes to the timer duration.
@@ -76,8 +71,7 @@ export const useHomeLogic = () => {
   return {
     sosActive,
     torchState,
-    hasPermission,
-    handleSOSToggle,
+    toggleSOS,
     handleTimeChange,
   };
 };
