@@ -2,6 +2,7 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { CameraView } from "expo-camera";
 import { useHomeLogic } from "@hooks/useHomeLogic";
+import { usePermissions } from "@hooks/usePermissions";
 import { Screen } from "@components/ui/Screen";
 
 // Components
@@ -20,26 +21,39 @@ import { BatteryWarning } from "@components/features/BatteryWarning";
  * Orchestrates the hardware control and SOS signaling.
  */
 export const HomeScreen: React.FC = () => {
-  const {
-    sosActive,
-    torchState,
-    hasPermission,
-    handleSOSToggle,
-    handleTimeChange,
+  const { permissions, requestPermissions } = usePermissions();
+  const { 
+    sosActive, 
+    torchState, 
+    toggleSOS, 
+    handleTimeChange 
   } = useHomeLogic();
 
-  if (hasPermission === false) {
-    return <PermissionError />;
+  const handleSOSToggle = async () => {
+    if (!permissions.camera) {
+      const granted = await requestPermissions();
+      if (!granted) return;
+    }
+    toggleSOS();
+  };
+
+  if (permissions.camera === false) {
+    return (
+      <PermissionError 
+        message="Camera permission is required to control the flashlight for emergency signals."
+        onRetry={requestPermissions}
+      />
+    );
   }
 
   return (
-    <Screen style={styles.content}>
+    <Screen style={styles.container}>
       {/* Hidden CameraView for Flashlight Control */}
-      {hasPermission && (
+      {permissions.camera && (
         <CameraView
           style={styles.hiddenCamera}
           facing="back"
-          enableTorch={torchState} // Managed by useSOSEngine
+          enableTorch={torchState}
         />
       )}
 
@@ -64,7 +78,7 @@ export const HomeScreen: React.FC = () => {
 };
 
 const styles = StyleSheet.create({
-  content: {
+  container: {
     flex: 1,
     width: "100%",
     paddingVertical: 30,

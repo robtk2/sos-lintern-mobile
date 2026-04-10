@@ -17,6 +17,7 @@ jest.mock('expo-av', () => ({
         Promise.resolve({ sound: mockSoundInstance })
       ),
     },
+    setAudioModeAsync: jest.fn().mockResolvedValue(undefined),
   },
 }));
 

@@ -7,6 +7,8 @@ import { useSOSStore } from '@store/useSOSStore';
  */
 export const BatteryService = {
   subscription: null as Battery.Subscription | null,
+  pollingInterval: null as ReturnType<typeof setInterval> | null,
+  POLLING_INTERVAL_MS: 60_000, // Re-calibrate every 60 seconds while SOS is active
 
   /**
    * Starts monitoring battery level and state.
@@ -20,10 +22,25 @@ export const BatteryService = {
       console.error('[BatteryService] Failed to get initial battery level:', error);
     }
 
-    // Subscribe to real-time level changes
+    // Subscribe to real-time level changes (fires on ~1% drops)
     this.subscription = Battery.addBatteryLevelListener(({ batteryLevel }) => {
       this.handleLevelChange(batteryLevel);
     });
+
+    // Active polling: re-calibrate burn rate while SOS is running.
+    // The event listener alone is not reliable enough since drops are infrequent.
+    this.pollingInterval = setInterval(async () => {
+      const store = useSOSStore.getState();
+      if (!store.sosActive) return; // Skip polling when idle; saves battery
+
+      try {
+        const level = await Battery.getBatteryLevelAsync();
+        store.setBatteryLevel(level);
+        this.calibrateHeuristics(level, store);
+      } catch (error) {
+        console.error('[BatteryService] Polling failed:', error);
+      }
+    }, this.POLLING_INTERVAL_MS);
   },
 
   /**
@@ -70,12 +87,29 @@ export const BatteryService = {
   },
 
   /**
+   * Fetches the current battery level and updates the store.
+   * Used for periodic UI refresh independent of SOS state.
+   */
+  async refreshLevel() {
+    try {
+      const level = await Battery.getBatteryLevelAsync();
+      useSOSStore.getState().setBatteryLevel(level);
+    } catch (error) {
+      console.error('[BatteryService] Failed to refresh battery level:', error);
+    }
+  },
+
+  /**
    * Cleanup battery listeners.
    */
   stopMonitoring() {
     if (this.subscription) {
       this.subscription.remove();
       this.subscription = null;
+    }
+    if (this.pollingInterval) {
+      clearInterval(this.pollingInterval);
+      this.pollingInterval = null;
     }
   }
 };

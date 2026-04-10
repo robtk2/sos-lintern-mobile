@@ -16,6 +16,16 @@ export const SoundService = {
     if (this.isLoaded) return;
 
     try {
+      // Configure audio routing for Android & iOS:
+      // - Plays through the loudspeaker, not the earpiece.
+      // - Audible even if the device is in silent mode.
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
+
       const { sound } = await Audio.Sound.createAsync(
         require('../../assets/sounds/sos.mp3'),
         { shouldPlay: false, isLooping: true, volume: 1.0 }
@@ -29,10 +39,20 @@ export const SoundService = {
 
   /**
    * Starts playing the SOS sequence.
-   * Ensures sound is loaded before playing.
+   * Ensures sound is loaded and audio routing is correctly configured.
    */
   async playSOS() {
     try {
+      // Configure audio routing every time to guarantee speaker output.
+      // This is critical on Android: without this, the system may silently
+      // route audio to the earpiece or suppress it entirely.
+      await Audio.setAudioModeAsync({
+        allowsRecordingIOS: false,
+        playsInSilentModeIOS: true,
+        shouldDuckAndroid: false,
+        playThroughEarpieceAndroid: false,
+      });
+
       if (!this.isLoaded) {
         await this.preload();
       }
